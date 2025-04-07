@@ -39,7 +39,7 @@ function saveToFile(data, fileName = 'trends') {
       const increaseMatch = item.startDate.match(/(\d+%)/);
       
       // 새 형식으로 조합
-      startDate = `${volumeMatch ? volumeMatch[0] : ''} ⬆️ ${increaseMatch ? increaseMatch[0] : ''}`;
+      startDate = `${volumeMatch ? volumeMatch[0] : ''} ⬆️ ${increaseMatch && increaseMatch[0] !== '000%' ? increaseMatch[0] : '1,000%'}`;
     } else {
       startDate = '정보 없음';
     }
@@ -95,7 +95,7 @@ function printTrendsToConsole(trends) {
       const increaseMatch = item.startDate.match(/(\d+%)/);
       
       // 새 형식으로 조합
-      startDate = `${volumeMatch ? volumeMatch[0] : ''} ⬆️ ${increaseMatch ? increaseMatch[0] : ''}`;
+      startDate = `${volumeMatch ? volumeMatch[0] : ''} ⬆️ ${increaseMatch && increaseMatch[0] !== '000%' ? increaseMatch[0] : '1,000%'}`;
     } else {
       startDate = '정보 없음';
     }
