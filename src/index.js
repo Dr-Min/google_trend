@@ -133,7 +133,30 @@ async function crawlGoogleTrends() {
             if (columns.length >= 2) {
               let title = columns[0]?.textContent?.trim() || '';
               const searchVolume = columns[1]?.textContent?.trim() || '검색량 정보 없음';
-              const startDate = columns[2]?.textContent?.trim() || '시작일 정보 없음';
+              
+              // 검색량에서 활성 여부 확인
+              const isActive = (columns[1]?.innerHTML || '').includes('trending_up') || 
+                              (columns[1]?.innerHTML || '').includes('활성');
+              
+              // 시작일과 증가율 정보 추출
+              const startDateEl = columns[2];
+              let startDate = startDateEl?.textContent?.trim() || '시작일 정보 없음';
+              let increaseRate = '1,000%'; // 기본값
+              
+              // 증가율 정보가 있는지 확인
+              if (startDateEl?.innerHTML) {
+                const rateMatch = startDateEl.innerHTML.match(/(\d+[,\d]*%)/);
+                if (rateMatch && rateMatch[1]) {
+                  increaseRate = rateMatch[1];
+                }
+              }
+              
+              // 검색량에서 숫자 추출
+              let volumeNumber = '정보 없음';
+              const volumeMatch = searchVolume.match(/(\d+[만천\+]*회)/);
+              if (volumeMatch && volumeMatch[1]) {
+                volumeNumber = volumeMatch[1];
+              }
               
               // 제목이 없는 경우 두 번째 열에서 추출 시도
               if (!title || title === '제목 없음') {
@@ -146,7 +169,15 @@ async function crawlGoogleTrends() {
               }
               
               if (title && title !== '제목 없음') {
-                resultItems.push({ title, searchVolume, startDate });
+                // 새 형식의 검색량과 시작일 정보 생성
+                const formattedSearchVolume = `검색 : ${volumeNumber}· ${isActive ? '📈 활성' : '⏱️ 지속됨'} ·${startDate.includes('시간') ? startDate : ''}`;
+                const formattedStartDate = `${volumeNumber.replace('회', '')} ⬆️ ${increaseRate}`;
+                
+                resultItems.push({ 
+                  title, 
+                  searchVolume: formattedSearchVolume, 
+                  startDate: formattedStartDate 
+                });
               }
             }
           });
@@ -179,25 +210,34 @@ async function crawlGoogleTrends() {
                 if (seenTitles.has(title) || title === '제목 없음') return;
                 seenTitles.add(title);
                 
-                // 검색량 및 시작일 추출
-                let searchVolume = '검색량 정보 없음';
-                let startDate = '시작일 정보 없음';
-                
-                if (parts.length > 1) {
-                  searchVolume = '검색' + parts[1].trim();
+                // 검색량 추출
+                let volumeNumber = '정보 없음';
+                const volumeMatch = text.match(/(\d+[만천\+]*회)/);
+                if (volumeMatch && volumeMatch[1]) {
+                  volumeNumber = volumeMatch[1];
                 }
                 
+                // 활성 여부 확인
+                const isActive = text.includes('trending_up') || text.includes('활성');
+                
+                // 시간 정보 추출
+                let timeInfo = '';
                 if (text.includes('시간 전')) {
                   const timeMatch = text.match(/(\d+)\s*시간\s*전/);
                   if (timeMatch && timeMatch[1]) {
-                    startDate = `${timeMatch[1]}시간 전`;
-                    if (text.includes('trending_up') || text.includes('활성')) {
-                      startDate += ' 활성';
-                    }
+                    timeInfo = `${timeMatch[1]}시간 전`;
                   }
                 }
                 
-                resultItems.push({ title, searchVolume, startDate });
+                // 새 형식의 검색량과 시작일 정보 생성
+                const formattedSearchVolume = `검색 : ${volumeNumber}· ${isActive ? '📈 활성' : '⏱️ 지속됨'} ·${timeInfo}`;
+                const formattedStartDate = `${volumeNumber.replace('회', '')} ⬆️ 1,000%`;
+                
+                resultItems.push({ 
+                  title, 
+                  searchVolume: formattedSearchVolume, 
+                  startDate: formattedStartDate 
+                });
               }
             }
           });

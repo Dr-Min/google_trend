@@ -15,10 +15,46 @@ function saveToFile(data, fileName = 'trends') {
     fs.mkdirSync(resultsDir, { recursive: true });
   }
   
+  // 데이터 형식 정리
+  const formattedData = data.map(item => {
+    // 검색량 형식 조정
+    let searchVolume = '';
+    if (item.searchVolume && item.searchVolume !== '검색량 정보 없음') {
+      // 원본 값에서 필요한 정보 추출
+      const volumeMatch = item.searchVolume.match(/(\d+[만천\+]*회)/);
+      const isActive = item.searchVolume.includes('활성') || item.searchVolume.includes('trending_up');
+      const timeMatch = item.searchVolume.match(/(\d+)\s*시간\s*전/);
+      
+      // 새 형식으로 조합
+      searchVolume = `검색 : ${volumeMatch ? volumeMatch[0] : '정보 없음'}· ${isActive ? '📈 활성' : '⏱️ 지속됨'} ·${timeMatch ? timeMatch[0] : ''}`;
+    } else {
+      searchVolume = '검색 : 정보 없음';
+    }
+    
+    // 시작일 형식 조정
+    let startDate = '';
+    if (item.startDate && item.startDate !== '시작일 정보 없음') {
+      // 숫자와 증가율 추출
+      const volumeMatch = item.startDate.match(/(\d+[만천\+]*)/);
+      const increaseMatch = item.startDate.match(/(\d+%)/);
+      
+      // 새 형식으로 조합
+      startDate = `${volumeMatch ? volumeMatch[0] : ''} ⬆️ ${increaseMatch ? increaseMatch[0] : ''}`;
+    } else {
+      startDate = '정보 없음';
+    }
+    
+    return {
+      title: item.title,
+      searchVolume,
+      startDate
+    };
+  });
+  
   const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
   const filePath = path.join(resultsDir, `${fileName}_${timestamp}.json`);
   
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+  fs.writeFileSync(filePath, JSON.stringify(formattedData, null, 2), 'utf-8');
   return filePath;
 }
 
@@ -35,46 +71,47 @@ function printTrendsToConsole(trends) {
     return;
   }
   
+  // 데이터 형식 정리 (콘솔 출력용)
+  const formattedTrends = trends.map(item => {
+    // 검색량 형식 조정
+    let searchVolume = '';
+    if (item.searchVolume && item.searchVolume !== '검색량 정보 없음') {
+      // 원본 값에서 필요한 정보 추출
+      const volumeMatch = item.searchVolume.match(/(\d+[만천\+]*회)/);
+      const isActive = item.searchVolume.includes('활성') || item.searchVolume.includes('trending_up');
+      const timeMatch = item.searchVolume.match(/(\d+)\s*시간\s*전/);
+      
+      // 새 형식으로 조합
+      searchVolume = `검색 : ${volumeMatch ? volumeMatch[0] : '정보 없음'}· ${isActive ? '📈 활성' : '⏱️ 지속됨'} ·${timeMatch ? timeMatch[0] : ''}`;
+    } else {
+      searchVolume = '검색 : 정보 없음';
+    }
+    
+    // 시작일 형식 조정
+    let startDate = '';
+    if (item.startDate && item.startDate !== '시작일 정보 없음') {
+      // 숫자와 증가율 추출
+      const volumeMatch = item.startDate.match(/(\d+[만천\+]*)/);
+      const increaseMatch = item.startDate.match(/(\d+%)/);
+      
+      // 새 형식으로 조합
+      startDate = `${volumeMatch ? volumeMatch[0] : ''} ⬆️ ${increaseMatch ? increaseMatch[0] : ''}`;
+    } else {
+      startDate = '정보 없음';
+    }
+    
+    return {
+      title: item.title,
+      searchVolume,
+      startDate
+    };
+  });
+  
   // 각 트렌드 항목 출력
-  trends.forEach((trend, index) => {
+  formattedTrends.forEach((trend, index) => {
     console.log(`${index + 1}. ${trend.title || '제목 없음'}`);
-    
-    // 검색량 정보 출력
-    if (trend.searchVolume && trend.searchVolume !== '검색량 정보 없음') {
-      // 중복된 정보 제거 및 포맷 정리
-      let searchVolumeFormatted = trend.searchVolume
-        .replace(/trending_up/g, '↑')
-        .replace(/·/g, ' • ')
-        .replace(/회회/g, '회')
-        .replace(/arrow_upward/g, '↑ ');
-      
-      // 제목이 검색량에 포함된 경우 제거
-      if (trend.title && searchVolumeFormatted.includes(trend.title)) {
-        searchVolumeFormatted = searchVolumeFormatted.replace(trend.title, '').trim();
-        if (searchVolumeFormatted.startsWith('검색')) {
-          searchVolumeFormatted = searchVolumeFormatted.trim();
-        } else {
-          searchVolumeFormatted = '검색' + searchVolumeFormatted.trim();
-        }
-      }
-      
-      console.log(`   검색량: ${searchVolumeFormatted}`);
-    } else {
-      console.log(`   검색량: 정보 없음`);
-    }
-    
-    // 시작일 정보 출력
-    if (trend.startDate && trend.startDate !== '시작일 정보 없음') {
-      const startDateFormatted = trend.startDate
-        .replace(/trending_up/g, '↑')
-        .replace(/·/g, ' • ')
-        .replace(/arrow_upward/g, '↑ ')
-        .replace(/timelapse/g, '⏱ ');
-      console.log(`   시작일: ${startDateFormatted}`);
-    } else {
-      console.log(`   시작일: 정보 없음`);
-    }
-    
+    console.log(`   검색량: ${trend.searchVolume}`);
+    console.log(`   시작일: ${trend.startDate}`);
     console.log(''); // 각 항목 사이 빈 줄 추가
   });
   
