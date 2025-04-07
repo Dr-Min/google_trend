@@ -1,0 +1,20 @@
+# 의존성 파일
+node_modules/
+package-lock.json
+
+# 결과 파일
+results/
+debug-screenshot.png
+
+# 구글 API 인증 파일
+credentials.json
+
+# 로그 파일
+*.log
+
+# 엑셀 임시 파일
+~$*
+
+# 운영체제 파일
+.DS_Store
+Thumbs.db 
