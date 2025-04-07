@@ -375,11 +375,11 @@ async function crawlGoogleTrends() {
     });
     
     console.log('데이터 크롤링 완료!');
-    
-    // 결과 확인 및 디버깅
     console.log(`추출된 항목 수: ${trends.length}`);
-    trends.forEach((trend, idx) => {
-      console.log(`항목 ${idx + 1}: ${JSON.stringify(trend)}`);
+    
+    // 추출된 데이터 출력 (테스트용)
+    trends.forEach((item, index) => {
+      console.log(`항목 ${index + 1}: ${JSON.stringify(item)}`);
     });
     
     // 중복 제거 및 최대 5개 항목으로 제한
@@ -397,18 +397,28 @@ async function crawlGoogleTrends() {
     // 최종 결과
     const finalResults = uniqueResults.length > 0 ? uniqueResults : trends.slice(0, 5);
     
-    // 유틸리티 함수를 사용하여 결과 출력 및 저장
-    printTrendsToConsole(finalResults);
-    const filePath = saveToFile(finalResults);
-    console.log(`결과가 저장되었습니다: ${filePath}`);
-    
-    return finalResults;
+    try {
+      // 유틸리티 함수를 사용하여 결과 출력 및 저장
+      printTrendsToConsole(finalResults);
+      
+      // 데이터 저장 프로세스를 명시적으로 처리
+      console.log('데이터 저장 시작...');
+      const filePath = await saveToFile(finalResults);
+      console.log(`결과가 저장되었습니다: ${filePath}`);
+      
+      return finalResults;
+    } catch (error) {
+      console.error('데이터 처리 중 오류가 발생했습니다:', error);
+      console.error(error.stack);
+      throw error;
+    } finally {
+      // 브라우저 종료는 항상 실행
+      await browser.close();
+      console.log('브라우저가 종료되었습니다.');
+    }
   } catch (error) {
     console.error('크롤링 중 오류가 발생했습니다:', error);
     throw error;
-  } finally {
-    await browser.close();
-    console.log('브라우저가 종료되었습니다.');
   }
 }
 
