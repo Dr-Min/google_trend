@@ -1,0 +1,6 @@
+{
+  "spreadsheetId": "여기에_구글_스프레드시트_ID를_입력하세요",
+  "saveToExcel": true,
+  "saveToGoogleSheet": true,
+  "saveToJsonFile": true
+} 

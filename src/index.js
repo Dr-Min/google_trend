@@ -2,6 +2,24 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
 const { saveToFile, printTrendsToConsole } = require('./utils');
+const { saveToGoogleSheet, getSpreadsheetId } = require('./googleSheets');
+
+// 설정 파일 로드
+let config = {
+  saveToExcel: true,
+  saveToGoogleSheet: false,
+  saveToJsonFile: true
+};
+
+try {
+  const configPath = path.join(__dirname, '../config.json');
+  if (fs.existsSync(configPath)) {
+    const loadedConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    config = { ...config, ...loadedConfig };
+  }
+} catch (error) {
+  console.warn('설정 파일 로드 중 오류:', error.message);
+}
 
 /**
  * 구글 트렌드에서 미국 지역의 지난 4시간 동안의 상위 5개 트렌드를 크롤링하는 함수
@@ -398,13 +416,8 @@ async function crawlGoogleTrends() {
     const finalResults = uniqueResults.length > 0 ? uniqueResults : trends.slice(0, 5);
     
     try {
-      // 유틸리티 함수를 사용하여 결과 출력 및 저장
+      // 유틸리티 함수를 사용하여 결과 출력
       printTrendsToConsole(finalResults);
-      
-      // 데이터 저장 프로세스를 명시적으로 처리
-      console.log('데이터 저장 시작...');
-      const filePath = await saveToFile(finalResults);
-      console.log(`결과가 저장되었습니다: ${filePath}`);
       
       return finalResults;
     } catch (error) {
@@ -418,6 +431,8 @@ async function crawlGoogleTrends() {
     }
   } catch (error) {
     console.error('크롤링 중 오류가 발생했습니다:', error);
+    await browser.close();
+    console.log('오류 발생으로 브라우저가 종료되었습니다.');
     throw error;
   }
 }
@@ -455,7 +470,67 @@ async function autoScroll(page) {
 // 메인 함수
 async function main() {
   try {
-    await crawlGoogleTrends();
+    const trends = await crawlGoogleTrends();
+    
+    if (trends && trends.length > 0) {
+      // 데이터 처리 시작
+      console.log('데이터 저장 시작...');
+      
+      let savedFiles = [];
+      let errors = [];
+      
+      // JSON 파일 저장
+      if (config.saveToJsonFile) {
+        try {
+          const jsonFilePath = await saveToFile(trends);
+          if (jsonFilePath) {
+            savedFiles.push({ type: 'JSON', path: jsonFilePath });
+          }
+        } catch (error) {
+          console.error('JSON 파일 저장 중 오류:', error.message);
+          errors.push('JSON 저장 실패');
+        }
+      }
+      
+      // 구글 스프레드시트 저장
+      if (config.saveToGoogleSheet) {
+        try {
+          const spreadsheetId = getSpreadsheetId();
+          if (spreadsheetId) {
+            const sheetUrl = await saveToGoogleSheet(trends, spreadsheetId);
+            if (sheetUrl) {
+              savedFiles.push({ type: '구글 스프레드시트', path: sheetUrl });
+              console.log(`구글 스프레드시트에 저장 완료: ${sheetUrl}`);
+            } else {
+              errors.push('구글 스프레드시트 저장 실패');
+            }
+          } else {
+            console.warn('구글 스프레드시트 ID가 설정되지 않았습니다.');
+            errors.push('스프레드시트 ID 누락');
+          }
+        } catch (error) {
+          console.error('구글 스프레드시트 저장 중 오류:', error.message);
+          errors.push('스프레드시트 저장 실패');
+        }
+      }
+      
+      // 결과 요약
+      if (savedFiles.length > 0) {
+        console.log('\n===== 저장 결과 =====');
+        savedFiles.forEach(file => {
+          console.log(`${file.type}: ${file.path}`);
+        });
+        console.log('=====================');
+      }
+      
+      if (errors.length > 0) {
+        console.error('\n===== 오류 목록 =====');
+        errors.forEach(error => console.error(`- ${error}`));
+        console.error('====================');
+      }
+    } else {
+      console.error('크롤링된 데이터가 없습니다.');
+    }
   } catch (error) {
     console.error('프로그램 실행 중 오류가 발생했습니다:', error);
   }
