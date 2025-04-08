@@ -1,6 +1,6 @@
 {
-  "spreadsheetId": "여기에_구글_스프레드시트_ID를_입력하세요",
-  "saveToExcel": true,
+  "spreadsheetId": "1LOKnnZcuB-p1w_6vxh6huslzql8WIIadelOVDFvuUmQ",
+  "saveToExcel": false,
   "saveToGoogleSheet": true,
-  "saveToJsonFile": true
+  "saveToJsonFile": false
 } 
