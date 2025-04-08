@@ -1,0 +1,19 @@
+{
+  "name": "google_trend_linux",
+  "version": "1.0.0",
+  "description": "리눅스 환경에서 구글 트렌드 데이터를 크롤링하여 구글 스프레드시트에 저장",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "setup": "bash setup.sh",
+    "cron-setup": "bash cron-setup.sh",
+    "test": "node src/test-sheets.js"
+  },
+  "dependencies": {
+    "googleapis": "^126.0.1",
+    "puppeteer": "^21.5.0"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+} 
